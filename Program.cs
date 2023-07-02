@@ -150,6 +150,9 @@ namespace ELeaguesServer
                 case "logincheck":
                     reply = LoginCheck(separatedCommStringParts);
                     break;
+                case "alltourneys":
+                    reply = AllTourneys(separatedCommStringParts);
+                    break;
                 default:
                     reply = "sr:disapproved";
                     break;
@@ -171,8 +174,15 @@ namespace ELeaguesServer
         {
             bool loginCheck = false;
             //check if username exists in database and password is correct
-            if (loginCheck) return "sr:isadmin";
-            else return "sr:isnotadmin";
+            if (loginCheck) return "sr:approved";
+            else return "sr:disapproved";
+        }
+
+        public static string AllTourneys(string[] separatedCommStringParts)
+        {
+            string allTourneys = "";
+            //zapytanie o wszystkie turnieje, dopisywanie kolejnych nazw do stringa w pętli (dzielić nazwy ":")
+            return allTourneys;
         }
 
         // metody modyfikujące bazę danych
