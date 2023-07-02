@@ -2,7 +2,6 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Configuration;
 
 
 namespace ELeaguesServer
@@ -153,6 +152,9 @@ namespace ELeaguesServer
                 case "alltourneys":
                     reply = AllTourneys(separatedCommStringParts);
                     break;
+                case "mytourneys":
+                    reply = MyTourneys(separatedCommStringParts);
+                    break;
                 default:
                     reply = "sr:disapproved";
                     break;
@@ -183,6 +185,13 @@ namespace ELeaguesServer
             string allTourneys = "";
             //zapytanie o wszystkie turnieje, dopisywanie kolejnych nazw do stringa w pętli (dzielić nazwy ":")
             return allTourneys;
+        }
+
+        public static string MyTourneys(string[] separatedCommStringParts)
+        {
+            string myTourneys = "";
+            //zapytanie o turnieje do których zapisany jest zawodnik o nazwie separatedCommStringParts[2], dopisywanie kolejnych nazw do stringa w pętli (dzielić nazwy ":")
+            return myTourneys;
         }
 
         // metody modyfikujące bazę danych
