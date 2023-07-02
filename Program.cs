@@ -59,7 +59,7 @@ namespace ELeaguesServer
 
                     // Data buffer
                     byte[] bytes = new Byte[1024];
-                    string commString = null;
+                    string commString = "";
 
                     while (true)
                     {
