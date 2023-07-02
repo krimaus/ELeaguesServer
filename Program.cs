@@ -76,19 +76,14 @@ namespace ELeaguesServer
                     Console.WriteLine("Text received -> {0} ", commString);
                     
                     //splitting recieved message by ':'
-                    //char[] separator = { ':' };
-                    //int count = 3;
-                    string[] separatedCommStringParts = commString.Split(':', 5);
+                    string[] separatedCommStringParts = commString.Split(':');
                     
                     //checking and executing client request
                     byte[] message;
+                    string tempServerReply;
 
                     switch (separatedCommStringParts[0])
                     {
-                        case "lc":
-                            if (LoginCheck(separatedCommStringParts)) message = Encoding.ASCII.GetBytes("sr:approved");
-                            else message = Encoding.ASCII.GetBytes("sr:disapproved");
-                            break;
                         case "ca":
                             if (CreateAccount(separatedCommStringParts)) message = Encoding.ASCII.GetBytes("sr:approved");
                             else message = Encoding.ASCII.GetBytes("sr:disapproved");
@@ -111,6 +106,11 @@ namespace ELeaguesServer
                             break;
                         case "em":
                             if (EditMatch(separatedCommStringParts)) message = Encoding.ASCII.GetBytes("sr:approved");
+                            else message = Encoding.ASCII.GetBytes("sr:disapproved");
+                            break;
+                        case "sq":
+                            tempServerReply = ServerQuery(separatedCommStringParts);
+                            if (tempServerReply != "sr:disapproved") message = Encoding.ASCII.GetBytes(tempServerReply);
                             else message = Encoding.ASCII.GetBytes("sr:disapproved");
                             break;
                         default:
@@ -137,16 +137,44 @@ namespace ELeaguesServer
             }
         }
 
-        public static bool LoginCheck(string[] separatedCommStringParts)
+        //metoda obsługująca rozpoznawanie rodzaju zapytania od klienta
+        public static string ServerQuery(string[] separatedCommStringParts)
         {
-            if (separatedCommStringParts[0] == "lc")
+            string reply;
+
+            switch (separatedCommStringParts[1])
             {
-                //check if username exists in database and password is correct
-                return true;
+                case "isadmin":
+                    reply = IsAdminQuery(separatedCommStringParts);
+                    break;
+                case "logincheck":
+                    if (LoginCheck(separatedCommStringParts)) reply = "sr:approved";
+                    else reply = "sr:disapproved";
+                    break;
+                default:
+                    reply = "sr:disapproved";
+                    break;
             }
-            else return false;
+
+            return reply;
         }
 
+        // metody wysyłające zapytania do bazy danych
+        public static string IsAdminQuery(string[] separatedCommStringParts) 
+        {
+            bool isAdmin = false;
+            //zapytanie czy separatedCommStringParts[2] jest adminem
+            if (isAdmin) return "sr:isadmin";
+            else return "sr:isnotadmin";
+        }
+
+        public static bool LoginCheck(string[] separatedCommStringParts)
+        {
+            //check if username exists in database and password is correct
+            return true;
+        }
+
+        // metody modyfikujące bazę danych
         public static bool CreateAccount(string[] separatedCommStringParts)
         {
             if (separatedCommStringParts[0] == "ca")
@@ -171,7 +199,7 @@ namespace ELeaguesServer
         {
             if (separatedCommStringParts[0] == "ct")
             {
-                //add new Tourney to database, use CreateMatch to generate an empty bracket
+                // add new Tourney to database, use CreateMatch to generate an empty bracket
                 return true;
             }
             else return false;
