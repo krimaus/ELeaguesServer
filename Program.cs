@@ -148,8 +148,7 @@ namespace ELeaguesServer
                     reply = IsAdminQuery(separatedCommStringParts);
                     break;
                 case "logincheck":
-                    if (LoginCheck(separatedCommStringParts)) reply = "sr:approved";
-                    else reply = "sr:disapproved";
+                    reply = LoginCheck(separatedCommStringParts);
                     break;
                 default:
                     reply = "sr:disapproved";
@@ -168,10 +167,12 @@ namespace ELeaguesServer
             else return "sr:isnotadmin";
         }
 
-        public static bool LoginCheck(string[] separatedCommStringParts)
+        public static string LoginCheck(string[] separatedCommStringParts)
         {
+            bool loginCheck = false;
             //check if username exists in database and password is correct
-            return true;
+            if (loginCheck) return "sr:isadmin";
+            else return "sr:isnotadmin";
         }
 
         // metody modyfikujące bazę danych
