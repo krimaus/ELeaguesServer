@@ -205,15 +205,15 @@ namespace ELeaguesServer
             using (var db = new KrzmauContext())
             {
                 var user = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[2]));
-                var maches = db.Meczes.Where(m => m.Idzawodnikajeden.Equals(user.Iduzytkownika) || m.Idzawodnikadwa.Equals(user.Iduzytkownika));
+                var matches = db.Meczes.Where(m => m.Idzawodnikajeden.Equals(user.Iduzytkownika) || m.Idzawodnikadwa.Equals(user.Iduzytkownika));
                 // todo: switch from list to set?
                 List<int?> tourneyIds = new();
-                foreach (var mach in maches)
+                foreach (var match in matches)
                 {
-                    if (tourneyIds.Contains(mach.Idturnieju))
+                    if (tourneyIds.Contains(match.Idturnieju))
                     {
-                        tourneyIds.Add(mach.Idturnieju);
-                        myTourneys += ":" + mach.Idturnieju;
+                        tourneyIds.Add(match.Idturnieju);
+                        myTourneys += ":" + match.Idturnieju;
                     }
                 }
             }
