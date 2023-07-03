@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using ELeaguesServer.Models;
 
 
 namespace ELeaguesServer
@@ -197,12 +198,22 @@ namespace ELeaguesServer
         // metody modyfikujące bazę danych
         public static bool CreateAccount(string[] separatedCommStringParts)
         {
-            if (separatedCommStringParts[0] == "ca")
+
+            bool createAccount = false;
+            using(var db = new KrzmauContext())
             {
-                //add new user to database if username is free and no extra ':' are present
-                return true;
+                //add new user to database if username is free
+                if (!db.Uzytkownicies.Where(u => u.Nazwa.Equals(separatedCommStringParts[1])).Any())
+                {
+                    var newUser = new Uzytkownicy { Nazwa = separatedCommStringParts[1], Haslo = separatedCommStringParts[2],
+                        Administrator = (separatedCommStringParts[3] == "true") ? true : false};
+                    db.Add<Uzytkownicy>(newUser);
+                    db.SaveChanges();
+                    createAccount = true;
+                }
             }
-            else return false;
+            // todo: add check to see if no extra ':' are present
+            return createAccount;    
         }
 
         public static bool CreateLeague(string[] separatedCommStringParts)
