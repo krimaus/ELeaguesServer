@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using ELeaguesServer.Models;
 
 
@@ -89,19 +90,18 @@ namespace ELeaguesServer
                             else message = Encoding.ASCII.GetBytes("sr:disapproved");
                             break;
                         case "cl":
-                            if (CreateLeague(separatedCommStringParts)) message = Encoding.ASCII.GetBytes("sr:approved");
+                            tempServerReply = CreateLeague(separatedCommStringParts);
+                            if (tempServerReply != "sr:disapproved") message = Encoding.ASCII.GetBytes(tempServerReply);
                             else message = Encoding.ASCII.GetBytes("sr:disapproved");
                             break;
                         case "ct":
-                            if (CreateTourney(separatedCommStringParts)) message = Encoding.ASCII.GetBytes("sr:approved");
-                            else message = Encoding.ASCII.GetBytes("sr:disapproved");
-                            break;
-                        case "ap":
-                            if (AddPlayer(separatedCommStringParts)) message = Encoding.ASCII.GetBytes("sr:approved");
+                            tempServerReply = CreateTourney(separatedCommStringParts);
+                            if (tempServerReply != "sr:disapproved") message = Encoding.ASCII.GetBytes(tempServerReply);
                             else message = Encoding.ASCII.GetBytes("sr:disapproved");
                             break;
                         case "cm":
-                            if (CreateMatch(separatedCommStringParts)) message = Encoding.ASCII.GetBytes("sr:approved");
+                            tempServerReply = CreateMatch(separatedCommStringParts);
+                            if (tempServerReply != "sr:disapproved") message = Encoding.ASCII.GetBytes(tempServerReply);
                             else message = Encoding.ASCII.GetBytes("sr:disapproved");
                             break;
                         case "em":
@@ -169,14 +169,24 @@ namespace ELeaguesServer
         {
             bool isAdmin = false;
             //zapytanie czy separatedCommStringParts[2] jest adminem
-            if (isAdmin) return "sr:isadmin";
-            else return "sr:isnotadmin";
+            using (var db = new KrzmauContext())
+            {
+                if (db.Uzytkownicies.Where(u => u.Administrator.Equals(separatedCommStringParts[2])).Any()) isAdmin = true;
+            }
+            if (isAdmin) return "sr:approved";
+            else return "sr:disapproved";
         }
 
+        // todo: fuse LoginCheck with IsAdmin 
         public static string LoginCheck(string[] separatedCommStringParts)
         {
             bool loginCheck = false;
             //check if username exists in database and password is correct
+            using (var db = new KrzmauContext())
+            {
+                var user = db.Uzytkownicies.SingleOrDefault(u => u.Nazwa.Equals(separatedCommStringParts[2]));
+                if (user.Haslo.Equals(separatedCommStringParts[3]) && !user.Equals(null)) loginCheck = true;
+            }
             if (loginCheck) return "sr:approved";
             else return "sr:disapproved";
         }
@@ -190,8 +200,24 @@ namespace ELeaguesServer
 
         public static string MyTourneys(string[] separatedCommStringParts)
         {
-            string myTourneys = "";
-            //zapytanie o turnieje do których zapisany jest zawodnik o nazwie separatedCommStringParts[2], dopisywanie kolejnych nazw do stringa w pętli (dzielić nazwy ":")
+            string myTourneys = "sr";
+            //zapytanie o turnieje do których zapisany jest zawodnik o nazwie separatedCommStringParts[2]
+            using (var db = new KrzmauContext())
+            {
+                var user = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[2]));
+                var maches = db.Meczes.Where(m => m.Idzawodnikajeden.Equals(user.Iduzytkownika) || m.Idzawodnikadwa.Equals(user.Iduzytkownika));
+                // todo: switch from list to set?
+                List<int?> tourneyIds = new();
+                foreach (var mach in maches)
+                {
+                    if (tourneyIds.Contains(mach.Idturnieju))
+                    {
+                        tourneyIds.Add(mach.Idturnieju);
+                        myTourneys += ":" + mach.Idturnieju;
+                    }
+                }
+            }
+
             return myTourneys;
         }
 
@@ -216,54 +242,59 @@ namespace ELeaguesServer
             return createAccount;    
         }
 
-        public static bool CreateLeague(string[] separatedCommStringParts)
+        public static string CreateLeague(string[] separatedCommStringParts)
         {
-            if (separatedCommStringParts[0] == "cl")
+            using (var db = new KrzmauContext())
             {
-                //add new league to database
-                return true;
+                if (!db.Uzytkownicies.Where(u => u.Nazwa.Equals(separatedCommStringParts[1])).Any())
+                {
+                    var newLeague = new Ligi { Idwlasciciela = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[1])).Iduzytkownika };
+                    db.Add(newLeague);
+                    db.SaveChanges();
+                    return newLeague.Idligi.ToString();
+                }
             }
-            else return false;
+            
+            return "sr:disapproved";
         }
 
-        public static bool CreateTourney(string[] separatedCommStringParts)
+        public static string CreateTourney(string[] separatedCommStringParts)
         {
-            if (separatedCommStringParts[0] == "ct")
+            // add new Tourney to database, use CreateMatch to generate an empty bracket
+            using (var db = new KrzmauContext())
             {
-                // add new Tourney to database, use CreateMatch to generate an empty bracket
-                return true;
+                if (!db.Ligis.Where(u => u.Idligi.Equals(Int32.Parse(separatedCommStringParts[1]))).Any())
+                {
+                    var newTourney = new Turnieje { Idligi = Int32.Parse(separatedCommStringParts[1]) };
+                    db.Add(newTourney);
+                    db.SaveChanges();
+                    return newTourney.Idturnieju.ToString();
+                }
             }
-            else return false;
+
+            return "sr:disapproved";
         }
 
-        public static bool AddPlayer(string[] separatedCommStringParts)
+        public static string CreateMatch(string[] separatedCommStringParts)
         {
-            if (separatedCommStringParts[0] == "ap")
+            using (var db = new KrzmauContext())
             {
-                //add new player to database
-                return true;
+                if (!db.Turniejes.Where(u => u.Idturnieju.Equals(Int32.Parse(separatedCommStringParts[1]))).Any())
+                {
+                    var newMatch = new Mecze { Idturnieju = Int32.Parse(separatedCommStringParts[1])};
+                    db.Add(newMatch);
+                    db.SaveChanges();
+                    return newMatch.Idmeczu.ToString();
+                }
             }
-            else return false;
-        }
 
-        public static bool CreateMatch(string[] separatedCommStringParts)
-        {
-            if (separatedCommStringParts[0] == "cm")
-            {
-                //add new match to database
-                return true;
-            }
-            else return false;
+            return "sr:disapproved";
         }
 
         public static bool EditMatch(string[] separatedCommStringParts)
         {
-            if (separatedCommStringParts[0] == "em")
-            {
-                //edit an existing match
-                return true;
-            }
-            else return false;
+            //most logic heavy lifting goes on clientside
+            return false;
         }
     }
 }
