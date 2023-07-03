@@ -207,7 +207,7 @@ namespace ELeaguesServer
                 {
                     var newUser = new Uzytkownicy { Nazwa = separatedCommStringParts[1], Haslo = separatedCommStringParts[2],
                         Administrator = (separatedCommStringParts[3] == "true") ? true : false};
-                    db.Add<Uzytkownicy>(newUser);
+                    db.Add(newUser);
                     db.SaveChanges();
                     createAccount = true;
                 }
