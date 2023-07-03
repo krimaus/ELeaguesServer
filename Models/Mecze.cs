@@ -23,9 +23,9 @@ public partial class Mecze
 
     public virtual Turnieje? IdturniejuNavigation { get; set; }
 
-    public virtual Zawodnicy? IdzawodnikadwaNavigation { get; set; }
+    public virtual Uzytkownicy? IdzawodnikadwaNavigation { get; set; }
 
-    public virtual Zawodnicy? IdzawodnikajedenNavigation { get; set; }
+    public virtual Uzytkownicy? IdzawodnikajedenNavigation { get; set; }
 
     public virtual ICollection<Mecze> InverseIdnastepnegomeczuNavigation { get; set; } = new List<Mecze>();
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using System.Configuration;
-using System.Diagnostics;
 
 namespace ELeaguesServer.Models;
 
@@ -24,8 +23,6 @@ public partial class KrzmauContext : DbContext
     public virtual DbSet<Turnieje> Turniejes { get; set; }
 
     public virtual DbSet<Uzytkownicy> Uzytkownicies { get; set; }
-
-    public virtual DbSet<Zawodnicy> Zawodnicies { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseNpgsql(ConfigurationManager.ConnectionStrings[0].ConnectionString);
@@ -110,24 +107,6 @@ public partial class KrzmauContext : DbContext
             entity.Property(e => e.Nazwa)
                 .HasMaxLength(50)
                 .HasColumnName("nazwa");
-        });
-
-        modelBuilder.Entity<Zawodnicy>(entity =>
-        {
-            entity.HasKey(e => e.Idzawodnika).HasName("zawodnicy_pkey");
-
-            entity.ToTable("zawodnicy");
-
-            entity.Property(e => e.Idzawodnika).HasColumnName("idzawodnika");
-            entity.Property(e => e.Alias)
-                .HasMaxLength(50)
-                .HasColumnName("alias");
-            entity.Property(e => e.Imie)
-                .HasMaxLength(50)
-                .HasColumnName("imie");
-            entity.Property(e => e.Nazwisko)
-                .HasMaxLength(50)
-                .HasColumnName("nazwisko");
         });
 
         OnModelCreatingPartial(modelBuilder);
