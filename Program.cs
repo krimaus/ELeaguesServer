@@ -252,7 +252,7 @@ namespace ELeaguesServer
                     var newLeague = new Ligi { Idwlasciciela = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[1])).Iduzytkownika };
                     db.Add(newLeague);
                     db.SaveChanges();
-                    return newLeague.Idligi.ToString();
+                    return "sr:" + newLeague.Idligi.ToString();
                 }
             }
             
@@ -269,7 +269,7 @@ namespace ELeaguesServer
                     var newTourney = new Turnieje { Idligi = Int32.Parse(separatedCommStringParts[1]) };
                     db.Add(newTourney);
                     db.SaveChanges();
-                    return newTourney.Idturnieju.ToString();
+                    return "sr:" + newTourney.Idturnieju.ToString();
                 }
             }
 
@@ -285,7 +285,7 @@ namespace ELeaguesServer
                     var newMatch = new Mecze { Idturnieju = Int32.Parse(separatedCommStringParts[1])};
                     db.Add(newMatch);
                     db.SaveChanges();
-                    return newMatch.Idmeczu.ToString();
+                    return "sr:" + newMatch.Idmeczu.ToString();
                 }
             }
 
@@ -307,7 +307,7 @@ namespace ELeaguesServer
                     if (separatedCommStringParts[6] != "empty") editedMatch.Wynikdwa = Int32.Parse(separatedCommStringParts[5]);
                     if (separatedCommStringParts[7] != "empty") editedMatch.Idnastepnegomeczu = Int32.Parse(separatedCommStringParts[7]);
                     db.SaveChanges();
-                    return editedMatch.Idmeczu.ToString();
+                    return "sr:" + editedMatch.Idmeczu.ToString();
                 }
             }
 
