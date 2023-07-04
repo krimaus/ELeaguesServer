@@ -316,17 +316,17 @@ namespace ELeaguesServer
         public static string EditMatch(string[] separatedCommStringParts)
         {
             // most logic heavy lifting goes on clientside
-            // em:idmeczu:idturnieju:zaw1:zaw2:wyn1:wyn2:nastmecz
+            // em:idmeczu:zaw1:zaw2:wyn1:wyn2:nastmecz
             using (var db = new KrzmauContext())
             {
-                if (!db.Turniejes.Where(u => u.Idturnieju.Equals(Int32.Parse(separatedCommStringParts[2]))).Any())
+                if (!db.Meczes.Where(u => u.Idmeczu.Equals(Int32.Parse(separatedCommStringParts[1]))).Any())
                 {
                     var editedMatch = db.Meczes.Single(m => m.Idmeczu.Equals(separatedCommStringParts[1]));
-                    if (separatedCommStringParts[3] != "empty") editedMatch.Idzawodnikajeden = Int32.Parse(separatedCommStringParts[3]);
-                    if (separatedCommStringParts[4] != "empty") editedMatch.Idzawodnikadwa = Int32.Parse(separatedCommStringParts[4]);
-                    if (separatedCommStringParts[5] != "empty") editedMatch.Wynikjeden = Int32.Parse(separatedCommStringParts[5]);
-                    if (separatedCommStringParts[6] != "empty") editedMatch.Wynikdwa = Int32.Parse(separatedCommStringParts[5]);
-                    if (separatedCommStringParts[7] != "empty") editedMatch.Idnastepnegomeczu = Int32.Parse(separatedCommStringParts[7]);
+                    if (separatedCommStringParts[2] != "empty") editedMatch.Idzawodnikajeden = Int32.Parse(separatedCommStringParts[2]);
+                    if (separatedCommStringParts[3] != "empty") editedMatch.Idzawodnikadwa = Int32.Parse(separatedCommStringParts[3]);
+                    if (separatedCommStringParts[4] != "empty") editedMatch.Wynikjeden = Int32.Parse(separatedCommStringParts[4]);
+                    if (separatedCommStringParts[5] != "empty") editedMatch.Wynikdwa = Int32.Parse(separatedCommStringParts[5]);
+                    if (separatedCommStringParts[6] != "empty") editedMatch.Idnastepnegomeczu = Int32.Parse(separatedCommStringParts[6]);
                     db.SaveChanges();
                     return "sr:" + editedMatch.Idmeczu.ToString();
                 }
