@@ -105,7 +105,8 @@ namespace ELeaguesServer
                             else message = Encoding.ASCII.GetBytes("sr:disapproved");
                             break;
                         case "em":
-                            if (EditMatch(separatedCommStringParts)) message = Encoding.ASCII.GetBytes("sr:approved");
+                            tempServerReply = EditMatch(separatedCommStringParts);
+                            if (tempServerReply != "sr:disapproved") message = Encoding.ASCII.GetBytes(tempServerReply);
                             else message = Encoding.ASCII.GetBytes("sr:disapproved");
                             break;
                         case "sq":
@@ -291,10 +292,26 @@ namespace ELeaguesServer
             return "sr:disapproved";
         }
 
-        public static bool EditMatch(string[] separatedCommStringParts)
+        public static string EditMatch(string[] separatedCommStringParts)
         {
-            //most logic heavy lifting goes on clientside
-            return false;
+            // most logic heavy lifting goes on clientside
+            // em:idmeczu:idturnieju:zaw1:zaw2:wyn1:wyn2:nastmecz
+            using (var db = new KrzmauContext())
+            {
+                if (!db.Turniejes.Where(u => u.Idturnieju.Equals(Int32.Parse(separatedCommStringParts[2]))).Any())
+                {
+                    var editedMatch = db.Meczes.Single(m => m.Idmeczu.Equals(separatedCommStringParts[1]));
+                    if (separatedCommStringParts[3] != "empty") editedMatch.Idzawodnikajeden = Int32.Parse(separatedCommStringParts[3]);
+                    if (separatedCommStringParts[4] != "empty") editedMatch.Idzawodnikadwa = Int32.Parse(separatedCommStringParts[4]);
+                    if (separatedCommStringParts[5] != "empty") editedMatch.Wynikjeden = Int32.Parse(separatedCommStringParts[5]);
+                    if (separatedCommStringParts[6] != "empty") editedMatch.Wynikdwa = Int32.Parse(separatedCommStringParts[5]);
+                    if (separatedCommStringParts[7] != "empty") editedMatch.Idnastepnegomeczu = Int32.Parse(separatedCommStringParts[7]);
+                    db.SaveChanges();
+                    return editedMatch.Idmeczu.ToString();
+                }
+            }
+
+            return "sr:disapproved";
         }
     }
 }
