@@ -50,7 +50,7 @@ namespace ELeaguesServer
                 while (true)
                 {
 
-                    Console.WriteLine("Waiting connection ... ");
+                    Console.WriteLine("Awaiting connection ... ");
 
                     // Suspend while waiting for
                     // incoming connection Using
@@ -90,10 +90,12 @@ namespace ELeaguesServer
                         case "cl":
                             tempServerReply = CreateLeague(separatedCommStringParts);
                             message = Encoding.ASCII.GetBytes(tempServerReply);
+                            Console.WriteLine("Wiadomość zwrotna dla klienta -> {0}", tempServerReply);
                             break;
                         case "ct":
                             tempServerReply = CreateTourney(separatedCommStringParts);
                             message = Encoding.ASCII.GetBytes(tempServerReply);
+                            Console.WriteLine("Wiadomość zwrotna dla klienta -> {0}", tempServerReply);
                             break;
                         case "cm":
                             tempServerReply = CreateMatch(separatedCommStringParts);
@@ -153,6 +155,9 @@ namespace ELeaguesServer
                 case "lastusedleague":
                     reply = LastUsedLeague(separatedCommStringParts);
                     break;
+                case "allplayers":
+                    reply = AllPlayers(separatedCommStringParts);
+                    break;
                 default:
                     reply = "sr:disapproved";
                     break;
@@ -168,7 +173,8 @@ namespace ELeaguesServer
             //zapytanie czy separatedCommStringParts[2] jest adminem
             using (var db = new KrzmauContext())
             {
-                if (db.Uzytkownicies.Where(u => u.Administrator.Equals(separatedCommStringParts[2])).Any()) isAdmin = true;
+                var uzytkownik = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[2]));
+                if (uzytkownik.Administrator) isAdmin = true;
             }
             Console.WriteLine(isAdmin);
             if (isAdmin) return "sr:approved";
@@ -192,21 +198,23 @@ namespace ELeaguesServer
 
         public static string AllTourneys(string[] separatedCommStringParts)
         {
-            string allTourneys = "sr";
+            string allTourneys = "";
             //zapytanie o wszystkie turnieje, dopisywanie kolejnych nazw do stringa w pętli (dzielić nazwy ":")
             using (var db = new KrzmauContext())
             {
                 foreach (var tourney in db.Turniejes)
                 {
-                    allTourneys += ":" + tourney.Idturnieju;
+                    allTourneys += tourney.Idturnieju + ":";
                 }
             }
-            return allTourneys;
+            Console.WriteLine(allTourneys);
+            if(allTourneys != "") return allTourneys;
+            return "sr:disapproved";
         }
 
         public static string MyTourneys(string[] separatedCommStringParts)
         {
-            string myTourneys = "sr";
+            string myTourneys = "";
             //zapytanie o turnieje do których zapisany jest zawodnik o nazwie separatedCommStringParts[2]
             using (var db = new KrzmauContext())
             {
@@ -219,12 +227,13 @@ namespace ELeaguesServer
                     if (tourneyIds.Contains(match.Idturnieju))
                     {
                         tourneyIds.Add(match.Idturnieju);
-                        myTourneys += ":" + match.Idturnieju;
+                        myTourneys += match.Idturnieju + ":";
                     }
                 }
             }
 
-            return myTourneys;
+            if(myTourneys != "") return myTourneys;
+            return "sr:disapproved";
         }
 
         public static string LastUsedLeague(string[] separatedCommStringParts)
@@ -232,11 +241,32 @@ namespace ELeaguesServer
             string lastUsed = "sr:";
             using (var db = new KrzmauContext())
             {
-                var userLeagues = db.Ligis.Where(l => l.Idwlasciciela.Equals(separatedCommStringParts[2]));
-                if (userLeagues != null) lastUsed += userLeagues.Max(m => m.Idligi).ToString();
+                var user = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[2]));
+                var userLeagues = db.Ligis.Where(l => l.Idwlasciciela.Equals(user.Iduzytkownika));
+
+                if (userLeagues.Any())
+                {
+                    lastUsed += userLeagues.Max(m => m.Idligi).ToString();
+                }
             }
+            Console.WriteLine("Informacja zwrotna dla klienta -> {0}", lastUsed);
             if (lastUsed.Equals("sr:")) return "sr:disapproved";
             else return lastUsed;
+        }
+
+        public static string AllPlayers(string[] separatedCommStringParts)
+        {
+            string allPlayers = "";
+            using (var db = new KrzmauContext())
+            {
+                foreach (var player in db.Uzytkownicies)
+                {
+                    allPlayers += player.Nazwa + ":";
+                }
+            }
+            Console.WriteLine(allPlayers);
+            if(allPlayers != "") return allPlayers;
+            return "sr:disapproved";
         }
 
         // metody modyfikujące bazę danych
@@ -262,11 +292,13 @@ namespace ELeaguesServer
 
         public static string CreateLeague(string[] separatedCommStringParts)
         {
+            Console.WriteLine("Podana nazwa użytkownika -> {0}", separatedCommStringParts[1]);
             using (var db = new KrzmauContext())
             {
-                if (!db.Uzytkownicies.Where(u => u.Nazwa.Equals(separatedCommStringParts[1])).Any())
+                if (db.Uzytkownicies.Where(u => u.Nazwa.Equals(separatedCommStringParts[1])).Any())
                 {
-                    var newLeague = new Ligi { Idwlasciciela = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[1])).Iduzytkownika };
+                    var tempUser = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[1]));
+                    var newLeague = new Ligi { Idwlasciciela = tempUser.Iduzytkownika };
                     db.Add(newLeague);
                     db.SaveChanges();
                     return "sr:" + newLeague.Idligi.ToString();
@@ -279,11 +311,12 @@ namespace ELeaguesServer
         public static string CreateTourney(string[] separatedCommStringParts)
         {
             // add new Tourney to database, use CreateMatch to generate an empty bracket
+            Console.WriteLine("Id ligi dla turnieju -> {0}", separatedCommStringParts[1]);
             using (var db = new KrzmauContext())
             {
-                if (!db.Ligis.Where(u => u.Idligi.Equals(Int32.Parse(separatedCommStringParts[1]))).Any())
+                if (db.Ligis.Where(u => u.Idligi.Equals(Int32.Parse(separatedCommStringParts[1]))).Any())
                 {
-                    var newTourney = new Turnieje { Idligi = Int32.Parse(separatedCommStringParts[1]) };
+                    var newTourney = new Turnieje { Idligi = Int32.Parse(separatedCommStringParts[1]), Liczbarund = 2 };
                     db.Add(newTourney);
                     db.SaveChanges();
                     return "sr:" + newTourney.Idturnieju.ToString();
@@ -297,7 +330,7 @@ namespace ELeaguesServer
         {
             using (var db = new KrzmauContext())
             {
-                if (!db.Turniejes.Where(u => u.Idturnieju.Equals(Int32.Parse(separatedCommStringParts[1]))).Any())
+                if (db.Turniejes.Where(u => u.Idturnieju.Equals(Int32.Parse(separatedCommStringParts[1]))).Any())
                 {
                     var newMatch = new Mecze { Idturnieju = Int32.Parse(separatedCommStringParts[1])};
                     db.Add(newMatch);
@@ -311,18 +344,26 @@ namespace ELeaguesServer
 
         public static string EditMatch(string[] separatedCommStringParts)
         {
-            // most logic heavy lifting goes on clientside
             // em:idmeczu:zaw1:zaw2:wyn1:wyn2:nastmecz
             using (var db = new KrzmauContext())
             {
-                if (!db.Meczes.Where(u => u.Idmeczu.Equals(Int32.Parse(separatedCommStringParts[1]))).Any())
+                if (db.Meczes.Where(m => m.Idmeczu.Equals(int.Parse(separatedCommStringParts[1]))).Any())
                 {
-                    var editedMatch = db.Meczes.Single(m => m.Idmeczu.Equals(separatedCommStringParts[1]));
-                    if (separatedCommStringParts[2] != "empty") editedMatch.Idzawodnikajeden = Int32.Parse(separatedCommStringParts[2]);
-                    if (separatedCommStringParts[3] != "empty") editedMatch.Idzawodnikadwa = Int32.Parse(separatedCommStringParts[3]);
-                    if (separatedCommStringParts[4] != "empty") editedMatch.Wynikjeden = Int32.Parse(separatedCommStringParts[4]);
-                    if (separatedCommStringParts[5] != "empty") editedMatch.Wynikdwa = Int32.Parse(separatedCommStringParts[5]);
-                    if (separatedCommStringParts[6] != "empty") editedMatch.Idnastepnegomeczu = Int32.Parse(separatedCommStringParts[6]);
+                    var editedMatch = db.Meczes.Single(m => m.Idmeczu.Equals(int.Parse(separatedCommStringParts[1])));
+
+                    if (separatedCommStringParts[2] != "empty")
+                    {
+                        var u1 = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[2]));
+                        editedMatch.Idzawodnikajeden = u1.Iduzytkownika;
+                    }
+                    if (separatedCommStringParts[3] != "empty")
+                    {
+                        var u2 = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[3]));
+                        editedMatch.Idzawodnikadwa = u2.Iduzytkownika;
+                    }
+                    if (separatedCommStringParts[4] != "empty") editedMatch.Wynikjeden = int.Parse(separatedCommStringParts[4]);
+                    if (separatedCommStringParts[5] != "empty") editedMatch.Wynikdwa = int.Parse(separatedCommStringParts[5]);
+                    if (separatedCommStringParts[6] != "empty") editedMatch.Idnastepnegomeczu = int.Parse(separatedCommStringParts[6]);
                     db.SaveChanges();
                     return "sr:" + editedMatch.Idmeczu.ToString();
                 }
