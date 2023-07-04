@@ -157,6 +157,9 @@ namespace ELeaguesServer
                 case "mytourneys":
                     reply = MyTourneys(separatedCommStringParts);
                     break;
+                case "lastusedleague":
+                    reply = LastUsedLeague(separatedCommStringParts);
+                    break;
                 default:
                     reply = "sr:disapproved";
                     break;
@@ -194,8 +197,15 @@ namespace ELeaguesServer
 
         public static string AllTourneys(string[] separatedCommStringParts)
         {
-            string allTourneys = "";
+            string allTourneys = "sr";
             //zapytanie o wszystkie turnieje, dopisywanie kolejnych nazw do stringa w pętli (dzielić nazwy ":")
+            using (var db = new KrzmauContext())
+            {
+                foreach (var tourney in db.Turniejes)
+                {
+                    allTourneys += ":" + tourney.Idturnieju;
+                }
+            }
             return allTourneys;
         }
 
@@ -220,6 +230,17 @@ namespace ELeaguesServer
             }
 
             return myTourneys;
+        }
+
+        public static string LastUsedLeague(string[] separatedCommStringParts)
+        {
+            string lastUsed = "sr:";
+            using (var db = new KrzmauContext())
+            {
+                var userLeagues = db.Ligis.Where(l => l.Idwlasciciela.Equals(separatedCommStringParts[2]));
+                lastUsed += userLeagues.Max(m => m.Idligi).ToString();
+            }
+            return lastUsed;
         }
 
         // metody modyfikujące bazę danych
