@@ -67,11 +67,9 @@ namespace ELeaguesServer
 
                         int numByte = clientSocket.Receive(bytes);
 
-                        commString += Encoding.ASCII.GetString(bytes,
-                                                0, numByte);
+                        commString += Encoding.ASCII.GetString(bytes, 0, numByte);
 
-                        if (commString.IndexOf("<EOF>") > -1)
-                            break;
+                        if (commString.IndexOf("<EOF>") > -1) break;
                     }
 
                     Console.WriteLine("Text received -> {0} ", commString);
@@ -91,28 +89,23 @@ namespace ELeaguesServer
                             break;
                         case "cl":
                             tempServerReply = CreateLeague(separatedCommStringParts);
-                            if (tempServerReply != "sr:disapproved") message = Encoding.ASCII.GetBytes(tempServerReply);
-                            else message = Encoding.ASCII.GetBytes("sr:disapproved");
+                            message = Encoding.ASCII.GetBytes(tempServerReply);
                             break;
                         case "ct":
                             tempServerReply = CreateTourney(separatedCommStringParts);
-                            if (tempServerReply != "sr:disapproved") message = Encoding.ASCII.GetBytes(tempServerReply);
-                            else message = Encoding.ASCII.GetBytes("sr:disapproved");
+                            message = Encoding.ASCII.GetBytes(tempServerReply);
                             break;
                         case "cm":
                             tempServerReply = CreateMatch(separatedCommStringParts);
-                            if (tempServerReply != "sr:disapproved") message = Encoding.ASCII.GetBytes(tempServerReply);
-                            else message = Encoding.ASCII.GetBytes("sr:disapproved");
+                            message = Encoding.ASCII.GetBytes(tempServerReply);
                             break;
                         case "em":
                             tempServerReply = EditMatch(separatedCommStringParts);
-                            if (tempServerReply != "sr:disapproved") message = Encoding.ASCII.GetBytes(tempServerReply);
-                            else message = Encoding.ASCII.GetBytes("sr:disapproved");
+                            message = Encoding.ASCII.GetBytes(tempServerReply);
                             break;
                         case "sq":
                             tempServerReply = ServerQuery(separatedCommStringParts);
-                            if (tempServerReply != "sr:disapproved") message = Encoding.ASCII.GetBytes(tempServerReply);
-                            else message = Encoding.ASCII.GetBytes("sr:disapproved");
+                            message = Encoding.ASCII.GetBytes(tempServerReply);
                             break;
                         default:
                             message = Encoding.ASCII.GetBytes("sr:disapproved");
@@ -177,6 +170,7 @@ namespace ELeaguesServer
             {
                 if (db.Uzytkownicies.Where(u => u.Administrator.Equals(separatedCommStringParts[2])).Any()) isAdmin = true;
             }
+            Console.WriteLine(isAdmin);
             if (isAdmin) return "sr:approved";
             else return "sr:disapproved";
         }
@@ -189,8 +183,9 @@ namespace ELeaguesServer
             using (var db = new KrzmauContext())
             {
                 var user = db.Uzytkownicies.SingleOrDefault(u => u.Nazwa.Equals(separatedCommStringParts[2]));
-                if (user.Haslo.Equals(separatedCommStringParts[3]) && !user.Equals(null)) loginCheck = true;
+                if (user.Haslo.Equals(separatedCommStringParts[3]) && user != null) loginCheck = true;
             }
+            Console.WriteLine(loginCheck);
             if (loginCheck) return "sr:approved";
             else return "sr:disapproved";
         }
@@ -238,9 +233,10 @@ namespace ELeaguesServer
             using (var db = new KrzmauContext())
             {
                 var userLeagues = db.Ligis.Where(l => l.Idwlasciciela.Equals(separatedCommStringParts[2]));
-                lastUsed += userLeagues.Max(m => m.Idligi).ToString();
+                if (userLeagues != null) lastUsed += userLeagues.Max(m => m.Idligi).ToString();
             }
-            return lastUsed;
+            if (lastUsed.Equals("sr:")) return "sr:disapproved";
+            else return lastUsed;
         }
 
         // metody modyfikujące bazę danych
