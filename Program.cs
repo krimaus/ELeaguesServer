@@ -218,20 +218,20 @@ namespace ELeaguesServer
         public static string MyTourneys(string[] separatedCommStringParts)
         {
             string myTourneys = "";
-            //zapytanie o turnieje do których zapisany jest zawodnik o nazwie separatedCommStringParts[2]
+            // zapytanie o turnieje których właścicielem jest dany admin
             using (var db = new KrzmauContext())
             {
                 var user = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[2]));
-                var matches = db.Meczes.Where(m => m.Idzawodnikajeden.Equals(user.Iduzytkownika) || m.Idzawodnikadwa.Equals(user.Iduzytkownika));
-                // todo: switch from list to set?
-                List<int?> tourneyIds = new();
-                foreach (var match in matches)
+                var leagues = db.Ligis.Where(l => l.Idwlasciciela.Equals(user.Iduzytkownika));
+                var tourneysQuery = from l in leagues
+                                    join t in db.Turniejes on l.Idligi equals t.Idligi
+                                    select new
+                                    {
+                                        tourneyId = t.Idturnieju
+                                    };
+                foreach(var t in tourneysQuery)
                 {
-                    if (tourneyIds.Contains(match.Idturnieju))
-                    {
-                        tourneyIds.Add(match.Idturnieju);
-                        myTourneys += match.Idturnieju + ":";
-                    }
+                    myTourneys += t.tourneyId.ToString() + ":";
                 }
             }
 
@@ -296,11 +296,11 @@ namespace ELeaguesServer
 
                 foreach(var entity in sortedQuery)
                 {
-                    myInfo += entity.idLigi + ":" + entity.idMeczu + ":" + entity.idMeczu + ":";
+                    myInfo += entity.idLigi + ":" + entity.idTurnieju + ":" + entity.idMeczu + ":";
                 }
 
             }
-            Console.WriteLine(myInfo);
+            Console.WriteLine("Informacja zwrotna z MyInfo -> {0}", myInfo);
             if (myInfo != "") return myInfo;
             return "sr:disapproved";
         }
