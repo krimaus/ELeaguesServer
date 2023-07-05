@@ -158,6 +158,9 @@ namespace ELeaguesServer
                 case "allplayers":
                     reply = AllPlayers(separatedCommStringParts);
                     break;
+                case "myinfo":
+                    reply = MyInfo(separatedCommStringParts);
+                    break;
                 default:
                     reply = "sr:disapproved";
                     break;
@@ -266,6 +269,39 @@ namespace ELeaguesServer
             }
             Console.WriteLine(allPlayers);
             if(allPlayers != "") return allPlayers;
+            return "sr:disapproved";
+        }
+
+        public static string MyInfo(string[] separatedCommStringParts)
+        {
+            string myInfo = "";
+            using (var db = new KrzmauContext())
+            {
+                var user = db.Uzytkownicies.Single(u => u.Nazwa.Equals(separatedCommStringParts[2]));
+                var matches = db.Meczes.Where(m => m.Idzawodnikajeden.Equals(user.Iduzytkownika) || m.Idzawodnikadwa.Equals(user.Iduzytkownika));
+
+                var supportingQuery = from Mecze in matches
+                                      join Turnieje in db.Turniejes on Mecze.Idturnieju equals Turnieje.Idturnieju
+                                      join Ligi in db.Ligis on Turnieje.Idligi equals Ligi.Idligi
+                                      select new
+                                      {
+                                          idLigi = Ligi.Idligi,
+                                          idTurnieju = Turnieje.Idturnieju,
+                                          idMeczu = Mecze.Idmeczu
+                                      };
+
+                var sortedQuery = from s in supportingQuery
+                                  orderby s.idTurnieju
+                                  select s;
+
+                foreach(var entity in sortedQuery)
+                {
+                    myInfo += entity.idLigi + ":" + entity.idMeczu + ":" + entity.idMeczu + ":";
+                }
+
+            }
+            Console.WriteLine(myInfo);
+            if (myInfo != "") return myInfo;
             return "sr:disapproved";
         }
 
