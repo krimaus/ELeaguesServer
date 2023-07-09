@@ -5,7 +5,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using ELeaguesServer.Models;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace ELeaguesServer
 {
@@ -319,7 +319,7 @@ namespace ELeaguesServer
             string tournamentExist = "";
             using (var db = new KrzmauContext())
             {
-                if (db.Turniejes.Where(t => t.Idturnieju.Equals(separatedCommStringParts[2])).Any()) tournamentExist = "sr:approved";
+                if (db.Turniejes.Where(t => t.Idturnieju.Equals(int.Parse(separatedCommStringParts[2]))).Any()) tournamentExist = "sr:approved";
                 else tournamentExist = "sr:disapproved";
             }
             return tournamentExist;
@@ -432,7 +432,9 @@ namespace ELeaguesServer
         {
             using (var db = new KrzmauContext())
             {
-                var tournament = db.Turniejes.Single(t => t.Idturnieju.Equals(separatedCommStringParts[1]));
+                var matches = db.Meczes.Where(t => t.Idturnieju.Equals(int.Parse(separatedCommStringParts[1])));
+                foreach(var match in matches) db.Meczes.Remove(match);
+                var tournament = db.Turniejes.Single(t => t.Idturnieju.Equals(int.Parse(separatedCommStringParts[1])));
                 db.Turniejes.Remove(tournament);
                 db.SaveChanges();
             }

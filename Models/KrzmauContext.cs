@@ -64,6 +64,7 @@ public partial class KrzmauContext : DbContext
 
             entity.HasOne(d => d.IdturniejuNavigation).WithMany(p => p.Meczes)
                 .HasForeignKey(d => d.Idturnieju)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("mecze_idturnieju_fkey");
 
             entity.HasOne(d => d.IdzawodnikadwaNavigation).WithMany(p => p.MeczeIdzawodnikadwaNavigations)
