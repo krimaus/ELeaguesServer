@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using ELeaguesServer.Models;
@@ -105,6 +106,11 @@ namespace ELeaguesServer
                             tempServerReply = EditMatch(separatedCommStringParts);
                             message = Encoding.ASCII.GetBytes(tempServerReply);
                             break;
+                        case "dt":
+                            tempServerReply = "sr:approved";
+                            DeleteTournament(separatedCommStringParts);
+                            message = Encoding.ASCII.GetBytes(tempServerReply);
+                            break;
                         case "sq":
                             tempServerReply = ServerQuery(separatedCommStringParts);
                             message = Encoding.ASCII.GetBytes(tempServerReply);
@@ -160,6 +166,9 @@ namespace ELeaguesServer
                     break;
                 case "myinfo":
                     reply = MyInfo(separatedCommStringParts);
+                    break;
+                case "tournamentexist":
+                    reply = TournamentExist(separatedCommStringParts);
                     break;
                 default:
                     reply = "sr:disapproved";
@@ -305,6 +314,17 @@ namespace ELeaguesServer
             return "sr:disapproved";
         }
 
+        public static string TournamentExist(string[] separatedCommStringParts)
+        {
+            string tournamentExist = "";
+            using (var db = new KrzmauContext())
+            {
+                if (db.Turniejes.Where(t => t.Idturnieju.Equals(separatedCommStringParts[2])).Any()) tournamentExist = "sr:approved";
+                else tournamentExist = "sr:disapproved";
+            }
+            return tournamentExist;
+        }
+
         // metody modyfikujące bazę danych
         public static bool CreateAccount(string[] separatedCommStringParts)
         {
@@ -406,6 +426,16 @@ namespace ELeaguesServer
             }
 
             return "sr:disapproved";
+        }
+
+        public static void DeleteTournament(string[] separatedCommStringParts)
+        {
+            using (var db = new KrzmauContext())
+            {
+                var tournament = db.Turniejes.Single(t => t.Idturnieju.Equals(separatedCommStringParts[1]));
+                db.Turniejes.Remove(tournament);
+                db.SaveChanges();
+            }
         }
     }
 }
